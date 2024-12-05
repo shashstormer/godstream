@@ -35,12 +35,6 @@ class Database:
                 starts_with.insert(0, document)
             elif any(title in t for t in titles):
                 contains.append(document)
-        async for document in self.collection.find({"title": {"$regex": re.escape(title), "$options": "i"}}):
-            titles = [i.lower() for i in document.get('titles', [])]
-            if any(t.startswith(title) for t in titles):
-                starts_with.insert(0, document)
-            elif any(title in t for t in titles):
-                contains.append(document)
         return starts_with + contains
 
     async def update_title(self, title, data):
