@@ -243,7 +243,7 @@ class KhorSite:
         return epi, start.split("[")[0].strip(" "), ep_no.split("-")[-1].split("[")[0].strip(" ")
 
     def source(self, episode_id):
-        if not episode_id.strip("/"):
+        if not episode_id.strip("/") or ("-episode-" not in episode_id) or len([char for char in episode_id.split("-")[-1] if char.isalpha()]) == 0:
             return {"error": "Unable to fetch details"}
         url = f'{self.main_url}/{episode_id}/'
         response = self.session.get(url)
