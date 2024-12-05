@@ -72,10 +72,10 @@ class Mapped:
         """
         try:
             self._start_mapper("search", {"query": title})
-            anime_details = await self.database.collection.find_one({"title": title})
+            anime_details = await self.database.title(title)
             if anime_details:
-                del anime_details["_id"]  # Remove MongoDB internal ID for cleaner output
-                return anime_details
+                del anime_details[0]["_id"]  # Remove MongoDB internal ID for cleaner output
+                return anime_details[0]
             return {"status": "Details not available yet. Mapper triggered for update."}
         except Exception as e:
             return {"error": str(e)}
@@ -125,16 +125,16 @@ def add_mapped(app: FastAPI, streamable_cache):
 
     @app.get("/mapped/anime/details")
     async def details(title: str):
-        return await mapped.details(title)
+        return await mapped.details(title.replace("%20", " "))
 
     @app.get("/mapped/anime/search")
     async def search(query: str):
-        return await mapped.search(query)
+        return await mapped.search(query.replace("%20", " "))
 
     @app.get("/mapped/anime/episodes")
     async def episodes(season_id: str):
-        return await mapped.episodes(season_id)
+        return await mapped.episodes(season_id.replace("%20", " "))
 
     @app.get("/mapped/anime/source")
     async def episodes(episode_id: str):
-        return await mapped.source(episode_id)
+        return await mapped.source(episode_id.replace("%20", " "))

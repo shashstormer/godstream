@@ -27,9 +27,14 @@ class Database:
         """
         starts_with = []
         contains = []
-
         # Correct MongoDB query with $regex
         async for document in self.collection.find({"titles": {"$regex": re.escape(title), "$options": "i"}}):
+            titles = document.get('titles', [])
+            if any(t.startswith(title) for t in titles):
+                starts_with.insert(0, document)
+            elif any(title in t for t in titles):
+                contains.append(document)
+        async for document in self.collection.find({"title": {"$regex": re.escape(title), "$options": "i"}}):
             titles = document.get('titles', [])
             if any(t.startswith(title) for t in titles):
                 starts_with.insert(0, document)
