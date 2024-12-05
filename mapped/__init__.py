@@ -59,7 +59,7 @@ class Mapped:
             })
             ani = []
             async for anime in ongoing_anime:
-                del ani["_id"]
+                del anime["_id"]
                 ani.append(anime)
             return ani
         except Exception as e:
