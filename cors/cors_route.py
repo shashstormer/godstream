@@ -75,7 +75,6 @@ def cors(request: Request, origins, cors_cache: Cacher) -> Response:
                 headers = None
                 if "/anime/" in url and (".m3u8" in url or ".ts" in url):
                     headers = {
-                        "Cookie": "PHPSESSID=0;__ddgid_=; __ddg2_=; __ddg1_=;",
                         "referer": url.replace("/anime/", "/embed/"),
                         "sec-fetch-site": "same-origin",
                         "sec-fetch-dest": "empty",
