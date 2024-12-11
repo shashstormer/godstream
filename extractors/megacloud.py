@@ -6,14 +6,18 @@ from typing import List, Dict, Any, Tuple, Optional
 import re
 import json
 import time
+from requestez import Session
+from requestez.parsers import load
 
 
 class MegaCloud:
-    def __init__(self):
+    def __init__(self, session: Session):
         self.server_name = "MegaCloud"
         self.sources: List[Dict[str, Any]] = []
+        self.session = session
 
     def extract(self, video_url: str) -> Dict[str, Any]:
+        print(video_url)
         try:
             result = {
                 "sources": [],
@@ -27,21 +31,25 @@ class MegaCloud:
 
             headers = {
                 "Accept": "*/*",
-                "X-Requested-With": "XMLHttpRequest",
+                # "X-Requested-With": "XMLHttpRequest",
                 "User-Agent": (
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                     "(KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
                 ),
+                "Cookie": "userSettings={%22auto_play%22:1%2C%22auto_next%22:1%2C%22auto_skip_intro%22:1%2C%22show_comments_at_home%22:1%2C%22public_watch_list%22:0%2C%22enable_dub%22:0%2C%22anime_name%22:%22en%22%2C%22play_original_audio%22:0}; watched_19353=true; watched_19321=true",
                 "Referer": video_url,
             }
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            srcs_data = response.json()
+            response = self.session.get(url, headers=headers)
+            # response.raise_for_status()
+            # print(response.status_code)
+            # srcs_data = response.json()
+            srcs_data = load(response)
 
             if not srcs_data:
                 raise ValueError("Url may have an invalid video id")
 
             encrypted_string = srcs_data.get("sources")
+            print(srcs_data)
             if not srcs_data["encrypted"] and isinstance(encrypted_string, list):
                 result["intro"] = srcs_data.get("intro")
                 result["outro"] = srcs_data.get("outro")

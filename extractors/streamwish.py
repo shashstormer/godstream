@@ -6,7 +6,7 @@ import requests.exceptions
 import re
 
 
-class FileMoon:
+class StreamWish:
     def __init__(self):
         self.session = requestez.Session()
 
@@ -14,26 +14,21 @@ class FileMoon:
         while True:
             try:
                 return self.session.get(url, headers=headers)
-            except (requests.exceptions.ConnectionError,) as e:
-                if str(e) == "('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))":
-                    raise e
+            except (requests.exceptions.ConnectionError,):
+                pass
 
     def source(self, method_value, domain):
         headers = {'Referer': domain, 'Sec-Fetch-Dest': 'iframe'}
         pg = self._infinite_request(method_value, headers=headers)
-        pg = html(pg)
-        ifu = pg.select_one('iframe')['src']
-        headers["Referer"] = method_value
-        ifp = self._infinite_request(ifu, headers=headers)
-        pkd = PACKER(ifp)
+        pkd = PACKER(pg)
         pkd = pkd.replace("'", '"')
         pkd = re.sub(r'(\w+):', r'"\1":', pkd)
-        pkd = load(re.search(r'jwplayer\("vplayer"\);videop\.setup\((\{.*?\})\)', pkd, re.DOTALL).group(1).replace('""https"://', '"https://').replace('="https":', '=https:'))
-        print(pkd)
+        pkd = load(re.search(r'jwplayer\("vplayer"\)\.setup\((\{.*?\})\)', pkd, re.DOTALL).group(1).replace('""https"://', '"https://').replace('="https":', '=https:').replace(",}", "}"))
         pkd.pop("advertising", "")
         pkd.pop("skin", "")
         pkd.pop("displaytitle", "")
         pkd.pop("abouttext", "")
+        pkd.pop("androidhls", "")
         pkd.pop("aboutlink", "")
         pkd.pop("playbackRateControls", "")
         pkd.pop("playbackRates", "")
@@ -44,9 +39,13 @@ class FileMoon:
         pkd.pop("preload", "")
         pkd.pop("width", "")
         pkd.pop("height", "")
+        pkd.pop("captions", "")
+        pkd.pop("logo", "")
+        pkd.pop("debug", "")
         return pkd
 
 
 if __name__ == '__main__':
-    filemoon = FileMoon()
-    print(filemoon.source("https://filemoon.sx/e/6toq00rr3fq3", "https://animekhor.org/myth-of-the-ancients-wangu-shenhua-episode-244-subtitles-english-indonesian/"))
+    filemoon = StreamWish()
+    print(filemoon.source("https://asnwish.com/e/d3hjaxdln5q3", "https://animekhor.org/myth-of-the-ancients-wangu-shenhua-episode-244-subtitles-english-indonesian/"))
+    

@@ -2,7 +2,7 @@ from requestez import Session
 from requestez.parsers import html
 from config import Config
 import base64
-from extractors import DailyMotion, FileMoon, OkRu
+from extractors import DailyMotion, FileMoon, OkRu, StreamWish, VidGuard
 
 cards_url_remap = {
     "shrouding-the-heavens": "shrounding-the-heavens"
@@ -17,6 +17,8 @@ class KhorSite:
             "okru": OkRu(),
             "dailymotion": DailyMotion(),
             "filemoon": FileMoon(),
+            "streamwish": StreamWish(),
+            "vidguard": VidGuard(),
         }
 
     def _cards(self, search_page):
@@ -243,7 +245,7 @@ class KhorSite:
         return epi, start.split("[")[0].strip(" "), ep_no.split("-")[-1].split("[")[0].strip(" ")
 
     def source(self, episode_id):
-        if not episode_id.strip("/") or ("-episode-" not in episode_id) or len([char for char in episode_id.split("-")[-1] if char.isalpha()]) == 0:
+        if (not episode_id.strip("/")) or ("-episode-" not in episode_id and "-episodes-" not in episode_id) or len([char for char in episode_id.split("-")[-1] if char.isalpha()]) == 0:
             return {"error": "Unable to fetch details"}
         url = f'{self.main_url}/{episode_id}/'
         response = self.session.get(url)
@@ -257,6 +259,7 @@ class KhorSite:
             except Exception as e:
                 print([source, url], e)
         # return {"error": "Unable to fetch source"}
+        print("X-X")
         raise ValueError("Testing")
 
     @staticmethod
@@ -273,7 +276,8 @@ class KhorSite:
                 source = self._decodeX(source['value'])
                 try:
                     source = str(source.find_all("iframe")[0]['src'])
-                except AttributeError:
+                except (AttributeError, IndexError):
+                    print(source)
                     source = ["none"]
                 if "ok.ru" in text:
                     if source.startswith("//"):
@@ -299,6 +303,13 @@ class KhorSite:
                     sources['silk'] = source
                 elif "abyss" in text:
                     sources['abyss'] = source
+                elif "streamwish" in text:
+                    sources['streamwish'] = source
+                elif "vgp" in text:
+                    sources["vidguard"] = source
                 else:
                     print(text, source)
+        if "okru" in sources:
+            okru = sources.pop("okru")
+            sources["okru"] = okru
         return sources

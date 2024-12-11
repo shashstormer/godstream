@@ -1,11 +1,27 @@
 from fastapi import FastAPI
+from streamable.animez import AnimeEz
 from streamable.gogo import GogoSite
 from streamable.zoro import ZoroSite
 from streamable.khor import KhorSite
 from database.cacher import Cacher
 
 # List of streaming site objects
-sites = [ZoroSite(), GogoSite(), KhorSite()]
+sites = [
+    AnimeEz(),
+    ZoroSite(),
+    GogoSite(),
+    KhorSite(),
+]
+
+
+def cache_conditions(site, method, queryXs):
+    if isinstance(site, AnimeEz):
+        return False
+    if method in []:
+        return False
+    else:
+        pass
+    return True
 
 
 async def caller(method, queryXs, cache_store, internal=False):
@@ -14,9 +30,10 @@ async def caller(method, queryXs, cache_store, internal=False):
     for site in sites:
         # Check if the site has the requested method
         if hasattr(site, method):
-            caches_res = cache_store.get("GET", queryXs, {"site": str(type(site)), "method": method})
+            caches_res = False
+            if cache_conditions(site, method, queryXs):
+                caches_res = cache_store.get("GET", queryXs, {"site": str(type(site)), "method": method})
             if caches_res:
-                # print("Cached")
                 site_result = caches_res
             else:
                 # try:
@@ -31,8 +48,13 @@ async def caller(method, queryXs, cache_store, internal=False):
                 "Unable to perform search"
             ]:
                 res.update(site_result)
+            else:
+                if site_result.get("error") not in ["Unable to fetch details", ]:
+                    # print(f"Response from {site}: {site_result}")
+                    pass
             # cache_store.set("GET", queryXs, {"site": str(type(site))}, site_result, 29030400)
-            cache_store.set("GET", queryXs, {"site": str(type(site)), "method": method}, site_result, 604800)
+            if cache_conditions(site, method, queryXs):
+                cache_store.set("GET", queryXs, {"site": str(type(site)), "method": method}, site_result, 604800)
         else:
             nf += 1
         # except Exception as e:
@@ -44,7 +66,7 @@ async def caller(method, queryXs, cache_store, internal=False):
                 return queryXs
     # print("Final Result: ", res)
     if not res:
-        return {"error": "No results"}
+        return {"error": "No results", "nf": nf}
     return res
 
 

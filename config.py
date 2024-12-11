@@ -6,6 +6,7 @@ load_dotenv()
 mongo_url = os.getenv("MONGO_URL", "")
 is_local = os.getenv("IS_LOCAL", "false") == "true"
 cors_proxy_url = os.getenv("CORS_PROXY_URL", "")
+enable_cors_proxy = os.getenv('ENABLE_CORS_PROXY', "") == "true"
 
 
 class GogoURLS:
@@ -43,10 +44,14 @@ class AnimeKhor:
     search_url_page = f"{khor_url}page/%s/?s="
 
 
+class AnimeEz:
+    anime_ez_url = "https://animez.org/"
+
+
 class Config:
     mongo_url = mongo_url
     is_local = is_local
-
+    enable_cors_proxy = enable_cors_proxy
     cors_proxy_url = cors_proxy_url
 
     class StreamURLS:
@@ -63,4 +68,7 @@ class Config:
             pass
 
         class AnimeKhor(AnimeKhor):
+            pass
+
+        class AnimeEz(AnimeEz):
             pass

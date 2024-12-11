@@ -20,7 +20,11 @@ class Cacher:
             except (json.JSONDecodeError, FileNotFoundError):
                 if os.path.exists(self.cache_file + ".temp"):
                     with open(self.cache_file + ".temp") as f:
-                        self.cache = json.load(f)
+                        try:
+                            self.cache = json.load(f)
+                        except (json.JSONDecodeError, ):
+                            pass
+
             self.start_cleanup_thread()
 
     @staticmethod
@@ -65,10 +69,11 @@ class Cacher:
                 os.rename(self.cache_file + ".temp", self.cache_file)
             except TypeError:
                 print("Not Supported")
+                self.running = False
 
     def cleanup_thread(self):
         while self.running:
-            time.sleep(5)
+            time.sleep(30)
             try:
                 self.cleanup()
             except Exception as e:

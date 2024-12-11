@@ -209,6 +209,9 @@ class ZoroSite:
                 if source[0] == "sub":
                     data_id = source[1]
                     break
+                if source[0] == "raw":
+                    data_id = source[1]
+                    break
             if source[0] not in ["sub", "dub"]:
                 print(source)
         if not data_id:
@@ -216,7 +219,7 @@ class ZoroSite:
         embed_url = f"{self.main_url}/ajax/v2/episode/sources?id=" + data_id  # 1089826
         embed_data = load(self.session.get(embed_url))
         embed_url = embed_data['link']
-        extractor = MegaCloud()
+        extractor = MegaCloud(self.session)
         video_urls = extractor.extract(embed_url)
         return video_urls
 

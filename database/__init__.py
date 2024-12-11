@@ -50,3 +50,9 @@ class Database:
         filter_query = {'titles': title}  # MongoDB query for absolute match in the array.
         result = await self.collection.update_many(filter_query, {'$set': data}, upsert=True)
         return result.modified_count
+
+    def shutdown(self):
+        """
+        Close the MongoDB client connection.
+        """
+        self.client.close()

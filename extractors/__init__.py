@@ -3,6 +3,8 @@ from extractors.megacloud import MegaCloud
 from extractors.gogo import Gogo
 from extractors.filemoon import FileMoon
 from extractors.dailymotion import DailyMotion
+from extractors.streamwish import StreamWish
+from extractors.vidguard import VidGuard
 
 test_urls = {
     'dailymotion': 'https://www.dailymotion.com/embed/video/k7jPWxIQJ1FSvsBN0BM',

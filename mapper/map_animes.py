@@ -162,6 +162,9 @@ class Mapper:
                 if season[0].strip("/") == dt.get("season_id").strip("/"):
                     sel = elem
         sns = []
+        if "seasons" not in sel:
+            print(sel)
+            return []
         for season in sel["seasons"]:
             if season[1] in sel["titles"]:
                 sns.append(season)
@@ -186,7 +189,10 @@ class Mapper:
                     episodes[episode[1]] = {"id": [episode[0]], "title": [], "name": episode[1]}
                     if len(episode) == 3:
                         episodes[episode[1]]["title"].extend(episode[2])
-        return episodes
+        return list(episodes.values())
+
+    def __del__(self):
+        self.database.shutdown()
 
 
 def add_mapper(app: FastAPI, streamable_cache: Cacher):
@@ -222,54 +228,68 @@ def add_mapper(app: FastAPI, streamable_cache: Cacher):
         if not res:
             return {"error": "No results"}
         return res
+    return mapper
 
 
-def run_routine(routine, streamable_cache):
-    import asyncio
-    asyncio.run(Mapper(streamable_cache).home(routine))
+class MapperUtils:
+    def __init__(self):
+        self.running = True
 
+    @staticmethod
+    def run_routine(routine, streamable_cache):
+        import asyncio
+        try:
+            asyncio.run(Mapper(streamable_cache).home(routine))
+        except RuntimeError:
+            pass
 
-def run_mapper(streamable_cache, method, queryXs):
-    import asyncio
-    asyncio.run(perform_map_bg(streamable_cache, method, queryXs))
+    def run_mapper(self, streamable_cache, method, queryXs):
+        import asyncio
+        asyncio.run(self.perform_map_bg(streamable_cache, method, queryXs))
 
+    @staticmethod
+    async def perform_map_bg(streamable_cache, method, queryXs):
+        mapper = Mapper(streamable_cache)
+        if hasattr(mapper, method):
+            dt = await caller(method, queryXs, streamable_cache, True)
+            if not dt.get("error", False):
+                await getattr(mapper, method)(dt)
+        return True
 
-async def perform_map_bg(streamable_cache, method, queryXs):
-    mapper = Mapper(streamable_cache)
-    if hasattr(mapper, method):
-        dt = await caller(method, queryXs, streamable_cache, True)
-        if not dt.get("error", False):
-            await getattr(mapper, method)(dt)
-    return True
+    def create_map(self, streamable_cache: Cacher):
+        from streamable.zoro import ZoroSite
+        z = ZoroSite()
+        for i in range(121, 184):
+            if not self.running:
+                break
+            self.run_routine(z.recent(i), streamable_cache)
 
-
-def create_map(streamable_cache: Cacher):
-    from streamable.zoro import ZoroSite
-    z = ZoroSite()
-    for i in range(121, 184):
-        run_routine(z.recent(i), streamable_cache)
-
-
-def create_map_multithread(streamable_cache: Cacher, recent_cache: Cacher, thread_count=10):
-    import threading
-    from streamable.zoro import ZoroSite
-    z = ZoroSite()
-    ts = []
-    for i in range(1, 184):
-        while len(ts) > thread_count:
-            for j in range(thread_count):
-                if not ts[j].is_alive():
-                    del ts[j]
+    def create_map_multithread(self, streamable_cache: Cacher, recent_cache: Cacher, thread_count=10):
+        import threading
+        from streamable.zoro import ZoroSite
+        z = ZoroSite()
+        ts = []
+        for i in range(1, 184):
+            while len(ts) > thread_count:
+                for j in range(thread_count):
+                    if not ts[j].is_alive():
+                        del ts[j]
+                        break
+                if not self.running:
                     break
-            time.sleep(1)
-        recent = recent_cache.get("recent", {"page": i}, {})
-        if not recent:
-            recent = z.recent(i)
-            recent_cache.set("recent", {"page": i}, {}, recent, 43200)
-        t = threading.Thread(target=run_routine, args=(recent, streamable_cache))
-        t.start()
-        ts.append(t)
-    while ts:
-        if not ts[0].is_alive():
-            del ts[0]
-            time.sleep(1)
+                time.sleep(1)
+            recent = recent_cache.get("recent", {"page": i}, {})
+            if not recent:
+                recent = z.recent(i)
+                recent_cache.set("recent", {"page": i}, {}, recent, 43200)
+            if not self.running:
+                break
+            t = threading.Thread(target=self.run_routine, args=(recent, streamable_cache))
+            t.start()
+            ts.append(t)
+        while ts:
+            if not self.running:
+                break
+            if not ts[0].is_alive():
+                del ts[0]
+                time.sleep(1)
